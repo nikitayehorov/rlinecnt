@@ -1,0 +1,40 @@
+name: Cross-Platform CI (Windows, Linux, macOS)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build-and-test:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Run unit and integration tests
+        run: cargo test --verbose
+
+      - name: Lint with Clippy
+        run: cargo clippy --all-targets
+
+      - name: Build optimized release binary
+        run: cargo build --release --verbose
+
+      - name: Smoke test binary on project source tree
+        run: cargo run --release -- -d -r src/
